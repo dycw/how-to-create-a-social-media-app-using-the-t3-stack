@@ -1,3 +1,8 @@
+# How To Create A Social Media App Using The T3 Stack (Web Dev Simplified)
+
+- https://www.youtube.com/watch?v=jqVm5_G1ZEE
+- https://github.com/WebDevSimplified/twitter-clone
+
 # `template-next-js`
 
 Template for Next.js Apps
