@@ -1,6 +1,6 @@
 {
   "name": "how-to-create-a-social-media-app-using-the-t3-stack",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
