@@ -1,8 +1,10 @@
+import SideNav from "@/components/SideNav";
 import "@/styles/globals.css";
 import { api } from "@/utils/api";
 import { type Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 import { type AppType } from "next/app";
+import Head from "next/head";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -10,7 +12,19 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <Head>
+        <title>Twitter Clone</title>
+        <meta
+          name="description"
+          content="This is a Twitter clone by Web Dev Simplified"
+        />
+      </Head>
+      <div className="container mx-auto flex items-start sm:pr-4">
+        <SideNav />
+        <div className="min-h-screen flex-grow border-x">
+          <Component {...pageProps} />
+        </div>
+      </div>
     </SessionProvider>
   );
 };
