@@ -20,8 +20,8 @@ export const tweetRouter = createTRPCRouter({
         limit: z.number().optional(),
         cursor: z
           .object({
-            createdAt: z.date(),
             id: z.string(),
+            createdAt: z.date(),
           })
           .optional(),
       })
@@ -47,6 +47,13 @@ export const tweetRouter = createTRPCRouter({
           },
         },
       });
+      let nextCursor: typeof cursor | undefined;
+      if (tweets.length > limit) {
+        const nextTweet = tweets.pop();
+        if (nextTweet !== undefined) {
+          nextCursor = { id: nextTweet.id, createdAt: nextTweet.createdAt };
+        }
+      }
       const outData = tweets.map((tweet) => ({
         id: tweet.id,
         content: tweet.content,
@@ -59,13 +66,6 @@ export const tweetRouter = createTRPCRouter({
           name: tweet.user.name ?? undefined,
         },
       }));
-      let nextCursor: typeof cursor | undefined;
-      if (tweets.length > limit) {
-        const nextTweet = tweets.pop();
-        if (nextTweet !== undefined) {
-          nextCursor = { id: nextTweet.id, createdAt: nextTweet.createdAt };
-        }
-      }
       return { tweets: outData, nextCursor };
     }),
 

@@ -18,9 +18,18 @@ function updateTextAreaSize(textArea?: HTMLTextAreaElement) {
   textArea.style.height = `${textArea.scrollHeight}px`;
 }
 
-function Form({ image }: { image?: string | undefined }) {
+function Form({
+  id,
+  name,
+  image,
+}: {
+  id: string;
+  name?: string | undefined;
+  image?: string | undefined;
+}) {
   const textAreaRef = useRef<HTMLTextAreaElement>();
   const [inputValue, setInputValue] = useState("");
+  const trpcUtils = api.useContext();
 
   useLayoutEffect(() => updateTextAreaSize(textAreaRef.current), [inputValue]);
   const inputRef = useCallback((textArea: HTMLTextAreaElement) => {
@@ -30,8 +39,32 @@ function Form({ image }: { image?: string | undefined }) {
 
   const createTweet = api.tweet.create.useMutation({
     onSuccess: (newTweet) => {
-      console.log(newTweet);
       setInputValue("");
+      trpcUtils.tweet.infiniteFeed.setInfiniteData({}, (oldData) => {
+        if (oldData === undefined || oldData.pages[0] === undefined) {
+          return;
+        }
+        const newCacheTweet = {
+          ...newTweet,
+          likeCount: 0,
+          likedByMe: false,
+          user: {
+            id,
+            name,
+            image,
+          },
+        };
+        return {
+          ...oldData,
+          pages: [
+            {
+              ...oldData.pages[0],
+              tweets: [newCacheTweet, ...oldData.pages[0].tweets],
+            },
+            ...oldData.pages.slice(1),
+          ],
+        };
+      });
     },
   });
   const handleSubmit = (e: FormEvent) => {
@@ -62,7 +95,10 @@ function Form({ image }: { image?: string | undefined }) {
 
 export default function NewTweetForm() {
   const session = useSession();
-  return session.status === "authenticated" ? (
-    <Form image={session.data.user.image ?? undefined} />
-  ) : undefined;
+  if (session.status === "authenticated") {
+    const { id, name, image } = session.data.user;
+    return <Form id={id} name={name ?? undefined} image={image ?? undefined} />;
+  } else {
+    return undefined;
+  }
 }
