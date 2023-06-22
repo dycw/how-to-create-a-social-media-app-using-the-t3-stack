@@ -11,7 +11,7 @@ export default function ProfileImage({
     <div
       className={`relative h-12 w-12 overflow-hidden rounded-full ${className}`}
     >
-      {src === undefined ? null : (
+      {src === undefined ? undefined : (
         <Image src={src} alt="Profile image" quality={100} fill />
       )}
     </div>
