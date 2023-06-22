@@ -1,4 +1,5 @@
 import IconHoverEffect from "@/components/IconHoverEffect";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import ProfileImage from "@/components/ProfileImage";
 import { api } from "@/utils/api";
 import { useSession } from "next-auth/react";
@@ -33,7 +34,11 @@ export default function InfiniteTweetList({
   fetchNewTweets: () => Promise<unknown>;
 }) {
   if (isLoading) {
-    return <h1>Loading...</h1>;
+    return (
+      <h1>
+        <LoadingSpinner />
+      </h1>
+    );
   }
   if (isError) {
     return <h1>Error...</h1>;
@@ -49,7 +54,7 @@ export default function InfiniteTweetList({
         dataLength={tweets.length}
         next={fetchNewTweets}
         hasMore={hasMore ?? false}
-        loader={"Loading..."}
+        loader={<LoadingSpinner />}
       >
         {tweets.map((tweet) => (
           <TweetCard key={tweet.id} {...tweet} />
