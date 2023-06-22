@@ -68,4 +68,20 @@ export const tweetRouter = createTRPCRouter({
       }
       return { tweets: outData, nextCursor };
     }),
+
+  toggleLike: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input: { id }, ctx }) => {
+      const data = { userId: ctx.session.user.id, tweetId: id };
+      const like = await ctx.prisma.like.findUnique({
+        where: { userId_tweetId: data },
+      });
+      if (like === null) {
+        await ctx.prisma.like.create({ data });
+        return { addedLike: true };
+      } else {
+        await ctx.prisma.like.delete({ where: { userId_tweetId: data } });
+        return { addedLike: false };
+      }
+    }),
 });
