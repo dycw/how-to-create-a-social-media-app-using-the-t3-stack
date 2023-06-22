@@ -1,5 +1,6 @@
 import IconHoverEffect from "@/components/IconHoverEffect";
 import ProfileImage from "@/components/ProfileImage";
+import { api } from "@/utils/api";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { VscHeart, VscHeartFilled } from "react-icons/vsc";
@@ -62,7 +63,18 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "short",
 });
 
-function TweetCard({ content, createdAt, likedByMe, likeCount, user }: Tweet) {
+function TweetCard({
+  id,
+  content,
+  createdAt,
+  likedByMe,
+  likeCount,
+  user,
+}: Tweet) {
+  const toggleLike = api.tweet.toggleLike.useMutation();
+
+  const handleToggleLike = () => toggleLike.mutate({ id });
+
   return (
     <li className="flex gap-4 border-b p-4">
       <Link href={`/profiles/${user.id}`}>
@@ -82,18 +94,27 @@ function TweetCard({ content, createdAt, likedByMe, likeCount, user }: Tweet) {
           </span>
         </div>
         <p className="whitespace-pre-wrap">{content}</p>
-        <HeartButton likedByMe={likedByMe} likeCount={likeCount} />
+        <HeartButton
+          onClick={handleToggleLike}
+          isLoading={toggleLike.isLoading}
+          likedByMe={likedByMe}
+          likeCount={likeCount}
+        />
       </div>
     </li>
   );
 }
 
 function HeartButton({
-  likedByMe,
+  isLoading,
   likeCount,
+  likedByMe,
+  onClick,
 }: {
-  likedByMe: boolean;
+  isLoading: boolean;
   likeCount: number;
+  likedByMe: boolean;
+  onClick: () => void;
 }) {
   const session = useSession();
   const HeartIcon = likedByMe ? VscHeartFilled : VscHeart;
@@ -107,11 +128,13 @@ function HeartButton({
   }
   return (
     <button
-      className={`group -ml-2 items-center gap-1 self-start transition-colors duration-200 ${
+      className={`group -ml-2 flex items-center gap-1 self-start transition-colors duration-200 ${
         likedByMe
           ? "text-red-500"
           : "text-gray-500 hover:text-red-500 focus-visible:text-red-500"
       } `}
+      disabled={isLoading}
+      onClick={onClick}
     >
       <IconHoverEffect red>
         <HeartIcon
