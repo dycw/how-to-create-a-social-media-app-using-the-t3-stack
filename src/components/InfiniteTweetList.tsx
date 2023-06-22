@@ -29,7 +29,7 @@ export default function InfiniteTweetList({
   tweets?: Tweet[] | undefined;
   isError: boolean;
   isLoading: boolean;
-  hasMore: boolean;
+  hasMore?: boolean | undefined;
   fetchNewTweets: () => Promise<unknown>;
 }) {
   if (isLoading) {
@@ -48,7 +48,7 @@ export default function InfiniteTweetList({
       <InfiniteScroll
         dataLength={tweets.length}
         next={fetchNewTweets}
-        hasMore={hasMore}
+        hasMore={hasMore ?? false}
         loader={"Loading..."}
       >
         {tweets.map((tweet) => (
@@ -71,7 +71,35 @@ function TweetCard({
   likeCount,
   user,
 }: Tweet) {
-  const toggleLike = api.tweet.toggleLike.useMutation();
+  const trpcUtils = api.useContext();
+  const toggleLike = api.tweet.toggleLike.useMutation({
+    onSuccess: ({ addedLike }) => {
+      const updateData: Parameters<
+        typeof trpcUtils.tweet.infiniteFeed.setInfiniteData
+      >[1] = (oldData) => {
+        if (oldData === undefined) {
+          return;
+        }
+        const countModifier = addedLike ? 1 : -1;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            tweets: page.tweets.map((tweet) =>
+              tweet.id === id
+                ? {
+                    ...tweet,
+                    likeCount: tweet.likeCount + countModifier,
+                    likedByMe: addedLike,
+                  }
+                : tweet
+            ),
+          })),
+        };
+      };
+      trpcUtils.tweet.infiniteFeed.setInfiniteData({}, updateData);
+    },
+  });
 
   const handleToggleLike = () => toggleLike.mutate({ id });
 
