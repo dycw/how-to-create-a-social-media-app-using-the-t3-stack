@@ -1,6 +1,6 @@
 {
   "name": "how-to-create-a-social-media-app-using-the-t3-stack",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -22,6 +22,8 @@
     "next-auth": "^4.22.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^4.10.1",
+    "react-infinite-scroll-component": "^6.1.0",
     "superjson": "^1.12.3",
     "zod": "^3.21.4"
   },
