@@ -1,9 +1,11 @@
 import {
+  createTRPCContext,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { inferAsyncReturnType } from "@trpc/server";
 import { z } from "zod";
 
 export const tweetRouter = createTRPCRouter({
@@ -32,9 +34,9 @@ export const tweetRouter = createTRPCRouter({
       async ({ input: { onlyFollowing = false, limit = 10, cursor }, ctx }) => {
         const currUserId = ctx.session?.user.id;
         return await getInfiniteTweets({
+          ctx,
           cursor,
           limit,
-          prisma: ctx.prisma,
           whereClause:
             currUserId === undefined || !onlyFollowing
               ? undefined
@@ -65,23 +67,18 @@ export const tweetRouter = createTRPCRouter({
 });
 
 async function getInfiniteTweets({
-  currUserId,
+  ctx,
   cursor,
   limit,
-  prisma,
   whereClause,
 }: {
-  currUserId?: string | undefined;
+  ctx: inferAsyncReturnType<typeof createTRPCContext>;
   cursor: { id: string; createdAt: Date } | undefined;
   limit: number;
-  prisma: PrismaClient<
-    Prisma.PrismaClientOptions,
-    never,
-    Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
-  >;
   whereClause?: Prisma.TweetWhereInput | undefined;
 }) {
-  const tweets = await prisma.tweet.findMany({
+  const currUserId = ctx.session?.user.id;
+  const tweets = await ctx.prisma.tweet.findMany({
     take: limit + 1,
     cursor: (cursor === undefined
       ? undefined
