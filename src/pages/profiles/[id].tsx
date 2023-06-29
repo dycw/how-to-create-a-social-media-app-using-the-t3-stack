@@ -1,3 +1,7 @@
+import Button from "@/components/Button";
+import IconHoverEffect from "@/components/IconHoverEffect";
+import InfiniteTweetList from "@/components/InfiniteTweetList";
+import ProfileImage from "@/components/ProfileImage";
 import ssgHelper from "@/server/api/ssgHelper";
 import { api } from "@/utils/api";
 import type {
@@ -6,8 +10,11 @@ import type {
   InferGetStaticPropsType,
   NextPage,
 } from "next";
+import { useSession } from "next-auth/react";
 import ErrorPage from "next/error";
 import Head from "next/head";
+import Link from "next/link";
+import { VscArrowLeft } from "react-icons/vsc";
 
 const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
   id,
@@ -16,6 +23,10 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
     return <ErrorPage statusCode={404} />;
   }
   const { data: profile } = api.profile.getById.useQuery({ id });
+  const tweets = api.tweet.infiniteProfileFeed.useInfiniteQuery(
+    { userId: id },
+    { getNextPageParam: (lastPage) => lastPage.nextCursor }
+  );
   if (profile === null || profile === undefined) {
     return <ErrorPage statusCode={404} />;
   }
@@ -24,11 +35,68 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
       <Head>
         <title>{`Twitter clone - ${profile.name}`}</title>
       </Head>
-      {profile.name}
+      <header className="sticky top-0 z-10 flex items-center border-b bg-white px-4 py-2">
+        <Link href=".." className="mr-2">
+          <IconHoverEffect>
+            <VscArrowLeft className="h-6 w-6" />
+          </IconHoverEffect>
+        </Link>
+        <ProfileImage src={profile.image || ""} className="flex-shrink-0" />
+        <div className="ml-2 flex-grow">
+          <h1 className="text-lg font-bold">{profile.name}</h1>
+          <div className="text-gray-500">
+            {profile.tweetsCount}{" "}
+            {getPlural(profile.tweetsCount, "Tweet", "Tweets")} -{" "}
+            {profile.followersCount}{" "}
+            {getPlural(profile.followersCount, "Follower", "Followers")} -{" "}
+            {profile.followsCount} Following
+          </div>
+        </div>
+      </header>
+      <FollowButton
+        isFollowing={profile.isFollowing}
+        userId={id}
+        onClick={() => null}
+      />
+      <main>
+        <InfiniteTweetList
+          tweets={tweets.data?.pages.flatMap((page) => page.tweets)}
+          isLoading={tweets.isLoading}
+          isError={tweets.isError}
+          hasMore={tweets.hasNextPage}
+          fetchNewTweets={tweets.fetchNextPage}
+        />
+      </main>
     </>
   );
 };
+
 export default ProfilePage;
+
+function FollowButton({
+  userId,
+  isFollowing,
+  onClick,
+}: {
+  userId: string;
+  isFollowing: boolean;
+  onClick: () => void;
+}) {
+  const session = useSession();
+  if (session.status !== "authenticated" || session.data.user.id === userId) {
+    return null;
+  }
+  return (
+    <Button onClick={onClick} small gray={isFollowing}>
+      {isFollowing ? "Unfollow" : "Follow"}
+    </Button>
+  );
+}
+
+const pluralRules = new Intl.PluralRules();
+function getPlural(number: number, singular: string, plural: string) {
+  return pluralRules.select(number) === "one" ? singular : plural;
+}
 
 export const getStaticPaths: GetStaticPaths = () => {
   return {
